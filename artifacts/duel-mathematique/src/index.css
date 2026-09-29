@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 43 40% 94%;
+  --foreground: 225 35% 16%;
+  --border: 220 18% 84%;
+  --input: 220 18% 84%;
+  --ring: 224 85% 53%;
+  --card: 45 38% 98%;
+  --card-foreground: 225 35% 16%;
+  --card-border: 220 18% 84%;
+  --popover: 45 38% 98%;
+  --popover-foreground: 225 35% 16%;
+  --popover-border: 220 18% 84%;
+  --primary: 224 84% 51%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 11 84% 58%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 42 24% 88%;
+  --muted-foreground: 222 12% 44%;
+  --accent: 47 96% 63%;
+  --accent-foreground: 225 35% 16%;
+  --destructive: 8 74% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --chart-1: 224 84% 51%;
+  --chart-2: 11 84% 58%;
+  --chart-3: 47 96% 63%;
+  --chart-4: 158 45% 42%;
+  --chart-5: 273 38% 54%;
+  --sidebar: 43 40% 94%;
+  --sidebar-foreground: 225 35% 16%;
+  --sidebar-border: 220 18% 84%;
+  --sidebar-primary: 224 84% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 42 24% 88%;
+  --sidebar-accent-foreground: 225 35% 16%;
+  --sidebar-ring: 224 85% 53%;
+  --app-font-sans: 'Space Grotesk', sans-serif;
+  --app-font-mono: 'DM Mono', monospace;
+  --app-font-serif: Georgia, serif;
+  --radius: 1.1rem;
+  --button-outline: rgba(23, 31, 57, 0.12);
+  --badge-outline: rgba(23, 31, 57, 0.08);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(24, 37, 79, 0.04);
+  --elevate-2: rgba(24, 37, 79, 0.08);
+  --shadow-2xs: 0 2px 0 hsl(224 30% 20% / 0.03);
+  --shadow-xs: 0 3px 0 hsl(224 30% 20% / 0.04);
+  --shadow-sm: 0 7px 18px hsl(224 30% 20% / 0.07);
+  --shadow: 0 12px 34px hsl(224 30% 20% / 0.1);
+  --shadow-md: 0 18px 44px hsl(224 30% 20% / 0.13);
+  --shadow-lg: 0 24px 70px hsl(224 30% 20% / 0.15);
+  --shadow-xl: 0 30px 90px hsl(224 30% 20% / 0.18);
+  --shadow-2xl: 0 40px 110px hsl(224 30% 20% / 0.22);
+  --tracking-normal: 0;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: 225 35% 16%;
+  --foreground: 43 40% 94%;
+  --border: 225 24% 29%;
+  --input: 225 24% 29%;
+  --ring: 224 84% 62%;
+  --card: 225 31% 20%;
+  --card-foreground: 43 40% 94%;
+  --card-border: 225 24% 29%;
+  --popover: 225 31% 20%;
+  --popover-foreground: 43 40% 94%;
+  --popover-border: 225 24% 29%;
+  --primary: 224 84% 62%;
+  --primary-foreground: 225 35% 16%;
+  --secondary: 11 84% 62%;
+  --secondary-foreground: 225 35% 16%;
+  --muted: 225 24% 29%;
+  --muted-foreground: 220 16% 70%;
+  --accent: 47 96% 63%;
+  --accent-foreground: 225 35% 16%;
+  --destructive: 8 74% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --chart-1: 224 84% 62%;
+  --chart-2: 11 84% 62%;
+  --chart-3: 47 96% 63%;
+  --chart-4: 158 45% 52%;
+  --chart-5: 273 38% 64%;
+  --sidebar: 225 35% 16%;
+  --sidebar-foreground: 43 40% 94%;
+  --sidebar-border: 225 24% 29%;
+  --sidebar-primary: 224 84% 62%;
+  --sidebar-primary-foreground: 225 35% 16%;
+  --sidebar-accent: 225 24% 29%;
+  --sidebar-accent-foreground: 43 40% 94%;
+  --sidebar-ring: 224 84% 62%;
+  --button-outline: rgba(255, 255, 255, 0.12);
+  --badge-outline: rgba(255, 255, 255, 0.08);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    min-width: 320px;
+    font-family: var(--app-font-sans);
+  }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+}
+
+:root { color-scheme: light; }
+
+.game-shell {
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% -15%, rgba(255, 255, 255, .86), transparent 48%),
+    #f2efe5;
+}
+.game-shell::before {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  inset: 0;
+  z-index: 0;
+  opacity: .22;
+  background-image: radial-gradient(#33405a 0.55px, transparent 0.55px);
+  background-size: 8px 8px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+.game-content { position: relative; z-index: 1; }
+.display-type { font-family: var(--app-font-sans); font-weight: 700; letter-spacing: -.065em; }
+.mono { font-family: var(--app-font-mono); font-variant-numeric: tabular-nums; }
+.team-blue { --team: #3159e8; --team-dark: #203cb2; --team-pale: #e8edff; --team-ink: #213994; }
+.team-red { --team: #ed5b46; --team-dark: #b8372b; --team-pale: #ffebe5; --team-ink: #98372f; }
+.team-panel { border-top: 4px solid var(--team); background: #fffefa; }
+.team-panel .team-accent { color: var(--team); }
+.team-panel .team-button { background: var(--team); box-shadow: 0 4px 0 var(--team-dark); }
+.team-panel .team-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--team-dark); }
+.team-panel .team-button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--team-dark); }
+.team-panel .team-input:focus { border-color: var(--team); box-shadow: 0 0 0 3px color-mix(in srgb, var(--team) 17%, transparent); }
+.score-pop { animation: score-pop .48s cubic-bezier(.2,1.6,.4,1) both; }
+.score-drop { animation: score-drop .46s cubic-bezier(.22,.85,.38,1) both; }
+.score-hold { animation: score-hold .45s ease both; }
+.score-up { animation: score-up .55s cubic-bezier(.2,1.6,.4,1) both; }
+.score-down { animation: score-down .55s cubic-bezier(.22,.85,.38,1) both; }
+.question-enter { animation: question-enter .45s cubic-bezier(.2,.85,.3,1) both; }
+.resolution-enter { animation: resolution-enter .36s ease-out both; }
+.timer-pulse { animation: timer-pulse 1s ease-in-out infinite; }
+.calc-key { transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease; }
+.calc-key:active { transform: translateY(2px) scale(.97); box-shadow: none; }
+.scribble-line {
+  background: repeating-linear-gradient(135deg, #3159e8 0 7px, transparent 7px 14px);
+}
+@keyframes score-pop { 0%{transform:scale(1)} 45%{transform:scale(1.32) rotate(-3deg)} 100%{transform:scale(1)} }
+@keyframes score-drop { 0%{transform:translateY(0)} 30%{transform:translateY(7px) scale(.92)} 100%{transform:translateY(0)} }
+@keyframes score-up { 0%{transform:translateY(13px);opacity:.25} 100%{transform:translateY(0);opacity:1} }
+@keyframes score-down { 0%{transform:translateY(-12px);opacity:.25} 100%{transform:translateY(0);opacity:1} }
+@keyframes score-hold { 0%{transform:scale(1)} 45%{transform:scale(1.08)} 100%{transform:scale(1)} }
+@keyframes question-enter { 0%{opacity:0;transform:translateY(12px) scale(.985)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes resolution-enter { 0%{opacity:0;transform:translateY(8px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes timer-pulse { 50%{transform:scale(1.055)} }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

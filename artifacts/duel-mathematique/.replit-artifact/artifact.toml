@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/duel-mathematique/"
+title = "Duel Mathématique"
+description = "Un jeu de compétition scolaire en français où deux équipes s'affrontent sur 99 questions de calcul, avec niveaux de difficulté, chronomètre et calculatrices interactives."
+version = "1.0.0"
+id = "artifacts/duel-mathematique"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/duel-mathematique/" ]
+localPort = 25933
+
+[services.development]
+run = "pnpm --filter @workspace/duel-mathematique run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/duel-mathematique", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/duel-mathematique/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25933"
+BASE_PATH = "/duel-mathematique/"

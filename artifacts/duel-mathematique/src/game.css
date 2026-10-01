@@ -80,6 +80,15 @@
 .difficulty-check { position: absolute; right: 12px; top: 12px; display: none; width: 21px; height: 21px; align-items: center; justify-content: center; color: white; background: #3159e8; border-radius: 50%; }
 .difficulty-card.selected .difficulty-check { display: flex; }
 .setup-bottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0 13px; }
+.game-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; flex: 1; max-width: 740px; }
+.setting-field { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 9px 10px; background: rgba(255,254,250,.76); border: 1px solid #d9d6cc; border-radius: 10px; }
+.setting-icon { width: 31px; height: 31px; flex: 0 0 31px; display: grid; place-items: center; color: #3159e8; background: #e6ebff; border-radius: 9px; }
+.setting-icon-yellow { color: #746019; background: #f7edc5; }
+.setting-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+.setting-copy b { color: #374057; font-size: 10px; line-height: 1.2; }
+.setting-copy small { color: #7c8290; font-size: 8px; }
+.setting-field input { width: 58px; height: 36px; flex: 0 0 58px; padding: 0 6px; color: #202a48; background: #fffefa; border: 1px solid #d9d8d1; border-radius: 7px; outline: none; font-family: var(--app-font-mono); font-size: 15px; font-weight: 700; text-align: center; }
+.setting-field input:focus-visible { border-color: #3159e8; box-shadow: 0 0 0 3px rgba(49,89,232,.12); }
 .rules-brief { display: flex; align-items: center; gap: 9px; color: #374057; }
 .rule-icon { width: 31px; height: 31px; display: grid; place-items: center; color: #3159e8; background: #e6ebff; border-radius: 9px; }
 .rule-icon-yellow { color: #746019; background: #f7edc5; margin-left: 10px; }
@@ -282,6 +291,12 @@
   .difficulty-card { min-height: 117px; padding: 12px; }
   .difficulty-title { font-size: 16px; }
   .setup-bottom { align-items: stretch; flex-direction: column; gap: 17px; padding-top: 19px; }
+  .game-settings { width: 100%; max-width: none; gap: 7px; }
+  .setting-field { gap: 6px; padding: 8px 7px; }
+  .setting-icon { width: 27px; height: 27px; flex-basis: 27px; }
+  .setting-copy b { font-size: 9px; }
+  .setting-copy small { font-size: 7px; }
+  .setting-field input { width: 47px; height: 34px; flex-basis: 47px; font-size: 13px; }
   .rules-brief { gap: 7px; }
   .rule-icon { width: 28px; height: 28px; }
   .rule-icon-yellow { margin-left: 1px; }

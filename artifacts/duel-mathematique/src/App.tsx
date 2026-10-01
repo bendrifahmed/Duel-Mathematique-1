@@ -116,6 +116,11 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function normalizeSetting(value: string, min: number, max: number, fallback: number): number {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+}
+
 function generateQuestion(difficulty: Difficulty): { expression: string; answer: number } {
   const ranges: Record<Difficulty, [number, number]> = {
     Facile: [2, 8],
@@ -375,6 +380,10 @@ function App() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [difficulty, setDifficulty] = useState<Difficulty>('Moyen');
   const [round, setRound] = useState(1);
+  const [questionCountInput, setQuestionCountInput] = useState('99');
+  const [secondsPerQuestionInput, setSecondsPerQuestionInput] = useState('30');
+  const [questionCount, setQuestionCount] = useState(99);
+  const [secondsPerQuestion, setSecondsPerQuestion] = useState(30);
   const [question, setQuestion] = useState(() => generateQuestion('Moyen'));
   const [seconds, setSeconds] = useState(30);
   const [scores, setScores] = useState<Record<TeamKey, number>>({ blue: 0, red: 0 });
@@ -389,6 +398,12 @@ function App() {
   const resolvedRef = useRef(false);
 
   const beginGame = () => {
+    const selectedQuestionCount = normalizeSetting(questionCountInput, 1, 99, 99);
+    const selectedSeconds = normalizeSetting(secondsPerQuestionInput, 1, 300, 30);
+    setQuestionCountInput(String(selectedQuestionCount));
+    setSecondsPerQuestionInput(String(selectedSeconds));
+    setQuestionCount(selectedQuestionCount);
+    setSecondsPerQuestion(selectedSeconds);
     setScores({ blue: 0, red: 0 });
     setRound(1);
     setAnswers({ blue: '', red: '' });
@@ -398,7 +413,7 @@ function App() {
     setResultMessages({ blue: '', red: '' });
     setRoundEvents([]);
     setQuestion(generateQuestion(difficulty));
-    setSeconds(30);
+    setSeconds(selectedSeconds);
     resolvedRef.current = false;
     setPhase('playing');
   };
@@ -482,7 +497,7 @@ function App() {
 
   const advance = () => {
     if (phase !== 'reveal') return;
-    if (round >= 99) {
+    if (round >= questionCount) {
       setFinalSnapshot(scores);
       setPhase('finished');
       return;
@@ -493,7 +508,7 @@ function App() {
     setResultMessages({ blue: '', red: '' });
     setRoundEvents([]);
     setQuestion(generateQuestion(difficulty));
-    setSeconds(30);
+    setSeconds(secondsPerQuestion);
     resolvedRef.current = false;
     setPhase('playing');
   };
@@ -502,7 +517,7 @@ function App() {
     setPhase('setup');
     setScores({ blue: 0, red: 0 });
     setRound(1);
-    setSeconds(30);
+    setSeconds(secondsPerQuestion);
     setAnswers({ blue: '', red: '' });
     setSubmissions({ blue: null, red: null });
     setResultMessages({ blue: '', red: '' });
@@ -515,8 +530,11 @@ function App() {
   };
 
   const winner = finalSnapshot.blue === finalSnapshot.red ? 'Égalité parfaite' : finalSnapshot.blue > finalSnapshot.red ? 'Équipe Bleue remporte le duel' : 'Équipe Rouge remporte le duel';
-  const timerPercent = Math.max(0, (seconds / 30) * 100);
-  const timerUrgent = seconds <= 10;
+  const timerPercent = Math.max(0, (seconds / secondsPerQuestion) * 100);
+  const timerUrgent = seconds <= Math.min(10, Math.ceil(secondsPerQuestion / 3));
+  const completedQuestions = phase === 'reveal' ? round : Math.max(0, round - 1);
+  const commitQuestionCount = () => setQuestionCountInput(String(normalizeSetting(questionCountInput, 1, 99, 99)));
+  const commitSecondsPerQuestion = () => setSecondsPerQuestionInput(String(normalizeSetting(secondsPerQuestionInput, 1, 300, 30)));
 
   return (
     <main className="game-shell">
@@ -578,12 +596,39 @@ function App() {
               ))}
             </div>
             <div className="setup-bottom">
-              <div className="rules-brief">
-                <span className="rule-icon"><Clock3 size={17} /></span>
-                <div><b>30 secondes</b><span>pour chaque question</span></div>
-                <span className="rules-separator" />
-                <span className="rule-icon rule-icon-yellow"><Zap size={16} /></span>
-                <div><b>99 questions</b><span>pour décrocher la victoire</span></div>
+              <div className="game-settings" aria-label="Paramètres de la partie">
+                <label className="setting-field" htmlFor="question-count">
+                  <span className="setting-icon"><Zap size={16} /></span>
+                  <span className="setting-copy"><b>Nombre de questions</b><small>De 1 à 99 par duel</small></span>
+                  <input
+                    id="question-count"
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    inputMode="numeric"
+                    value={questionCountInput}
+                    onChange={(event) => setQuestionCountInput(event.target.value)}
+                    onBlur={commitQuestionCount}
+                    aria-label="Nombre de questions"
+                  />
+                </label>
+                <label className="setting-field" htmlFor="seconds-per-question">
+                  <span className="setting-icon setting-icon-yellow"><Clock3 size={16} /></span>
+                  <span className="setting-copy"><b>Temps par question</b><small>De 1 à 300 secondes</small></span>
+                  <input
+                    id="seconds-per-question"
+                    type="number"
+                    min={1}
+                    max={300}
+                    step={1}
+                    inputMode="numeric"
+                    value={secondsPerQuestionInput}
+                    onChange={(event) => setSecondsPerQuestionInput(event.target.value)}
+                    onBlur={commitSecondsPerQuestion}
+                    aria-label="Secondes par question"
+                  />
+                </label>
               </div>
               <button type="button" className="start-button" onClick={beginGame} data-testid="button-start-game">
                 LANCER LE DUEL <ArrowRight size={18} />
@@ -595,7 +640,7 @@ function App() {
           <section className="final-screen resolution-enter" data-testid="screen-final" aria-labelledby="final-title">
             <div className="final-confetti" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>
             <div className="final-trophy"><Trophy size={32} /></div>
-            <p className="final-eyebrow">FIN DU DUEL · 99 QUESTIONS JOUÉES</p>
+            <p className="final-eyebrow">FIN DU DUEL · {questionCount} {questionCount === 1 ? 'QUESTION JOUÉE' : 'QUESTIONS JOUÉES'}</p>
             <h1 id="final-title">{winner}</h1>
             <p className="final-subtitle">Quel que soit le score, la classe a bien calculé.</p>
             <div className="final-scores">
@@ -609,10 +654,10 @@ function App() {
           </section>
         ) : (
           <>
-            <div className="round-bar" aria-label={`Question ${round} sur 99`}>
-              <div className="round-label"><span className="round-kicker">QUESTION</span><strong className="mono" data-testid="text-round">{String(round).padStart(2, '0')}<i> / 99</i></strong></div>
-              <div className="round-progress" role="progressbar" aria-label="Progression du duel" aria-valuemin={0} aria-valuemax={99} aria-valuenow={round}>
-                <div className="round-progress-fill" style={{ width: `${(round / 99) * 100}%` }} />
+            <div className="round-bar" aria-label={`Question ${round} sur ${questionCount}`}>
+              <div className="round-label"><span className="round-kicker">QUESTION</span><strong className="mono" data-testid="text-round">{String(round).padStart(2, '0')}<i> / {questionCount}</i></strong></div>
+              <div className="round-progress" role="progressbar" aria-label="Progression du duel" aria-valuemin={0} aria-valuemax={questionCount} aria-valuenow={completedQuestions}>
+                <div className="round-progress-fill" style={{ width: `${(completedQuestions / questionCount) * 100}%` }} />
                 <div className="progress-ticks" aria-hidden="true">{Array.from({ length: 10 }, (_, index) => <i key={index} />)}</div>
               </div>
               <span className="difficulty-pill">{difficulty.toUpperCase()}</span>
@@ -650,7 +695,7 @@ function App() {
                 <div className="challenge-card question-enter" key={`challenge-${round}-${phase}`}>
                   <div className="challenge-top">
                     <span className="challenge-tag"><span className="challenge-tag-dot" /> DÉFI COMMUN</span>
-                    <span className="challenge-sequence mono">{String(round).padStart(2, '0')} — 99</span>
+                    <span className="challenge-sequence mono">{String(round).padStart(2, '0')} — {questionCount}</span>
                   </div>
                   <div className="challenge-prompt">{phase === 'reveal' ? 'ALORS, COMBIEN ?' : 'CALCULEZ SANS VOUS TROMPER'}</div>
                   <div className="expression-wrap">
@@ -671,7 +716,7 @@ function App() {
                       <p className="resolution-heading"><Zap size={15} /> LE VERDICT DU TABLEAU</p>
                       {roundEvents.map((event, index) => <p className="resolution-line" key={`${round}-${index}`}>{event}</p>)}
                       <button type="button" className="next-button" onClick={advance} data-testid="button-next-question">
-                        {round >= 99 ? 'VOIR LE RÉSULTAT FINAL' : 'QUESTION SUIVANTE'} <ArrowRight size={16} />
+                        {round >= questionCount ? 'VOIR LE RÉSULTAT FINAL' : 'QUESTION SUIVANTE'} <ArrowRight size={16} />
                       </button>
                     </div>
                   ) : (

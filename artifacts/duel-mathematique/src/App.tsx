@@ -17,6 +17,7 @@ import {
 
 type Difficulty = 'Facile' | 'Moyen' | 'Difficile' | 'Expert';
 type TeamKey = 'blue' | 'red';
+type PlayMode = 'duel' | 'solo';
 type Phase = 'setup' | 'playing' | 'reveal' | 'finished';
 type TeamAnswers = Record<TeamKey, string>;
 type TeamSubmissions = Record<TeamKey, string | null>;
@@ -166,6 +167,8 @@ function CalculatorPad({
   result,
   setResult,
   onCopy,
+  copyDisabled,
+  owner,
 }: {
   team: TeamKey;
   value: string;
@@ -173,6 +176,8 @@ function CalculatorPad({
   result: string;
   setResult: (value: string) => void;
   onCopy: () => void;
+  copyDisabled: boolean;
+  owner: string;
 }) {
   const [error, setError] = useState('');
   const [steps, setSteps] = useState<string[]>([]);
@@ -180,8 +185,7 @@ function CalculatorPad({
     ['7', '8', '9', '÷'],
     ['4', '5', '6', '×'],
     ['1', '2', '3', '−'],
-    ['0', '(', ')', '+'],
-    ['[', ']', '⌫', '='],
+    ['0', '⌫', '+', '='],
   ];
   const append = (key: string) => {
     setError('');
@@ -210,17 +214,17 @@ function CalculatorPad({
   };
   const updateFromKeyboard = (next: string) => {
     setError('');
-    setValue(next.replace(/[^0-9+\-−×*÷/()[\]\s]/g, ''));
+    setValue(next.replace(/[^0-9+\-−×*÷/\s]/g, ''));
     setResult('');
     setSteps([]);
   };
   return (
-    <section className="calc-block" aria-label={`Calculatrice de ${TEAM_NAMES[team]}`}>
+    <section className="calc-block" aria-label={`Calculatrice de ${owner}`}>
       <div className="calc-heading">
         <span className="calc-heading-label"><Calculator size={14} strokeWidth={2.4} /> CALCULATRICE</span>
         <span className="calc-private">À VOUS</span>
       </div>
-      <label className="sr-only" htmlFor={`calculator-${team}`}>Expression de calcul, équipe {team === 'blue' ? 'bleue' : 'rouge'}</label>
+      <label className="sr-only" htmlFor={`calculator-${team}`}>Expression de calcul, {owner}</label>
       <input
         id={`calculator-${team}`}
         data-testid={`input-calculator-${team}`}
@@ -271,9 +275,9 @@ function CalculatorPad({
           type="button"
           data-testid={`button-calculator-${team}-copy`}
           className="calc-copy"
-          disabled={!result}
+          disabled={!result || copyDisabled}
           onClick={onCopy}
-          title="Copier le résultat dans votre réponse"
+          title="Copier le résultat et envoyer la réponse"
         >
           Copier vers réponse <ArrowRight size={13} />
         </button>
@@ -297,6 +301,8 @@ function TeamPanel({
   onSubmit,
   onCopy,
   message,
+  solo,
+  round,
 }: {
   team: TeamKey;
   score: number;
@@ -312,16 +318,19 @@ function TeamPanel({
   onSubmit: () => void;
   onCopy: () => void;
   message?: string;
+  solo: boolean;
+  round: number;
 }) {
   const isBlue = team === 'blue';
+  const playerName = solo ? 'Joueur' : TEAM_NAMES[team];
   return (
     <section className={`team-panel team-${team}`} aria-labelledby={`team-title-${team}`} data-testid={`panel-team-${team}`}>
       <header className="team-topline">
         <div className="team-identity">
-          <span className="team-emblem" aria-hidden="true">{isBlue ? 'B' : 'R'}</span>
+          <span className="team-emblem" aria-hidden="true">{solo ? '1' : isBlue ? 'B' : 'R'}</span>
           <div>
-            <p className="team-kicker">CAMP ÉQUIPE {isBlue ? '01' : '02'}</p>
-            <h2 id={`team-title-${team}`}>{TEAM_NAMES[team]}</h2>
+            <p className="team-kicker">{solo ? 'PARTIE SOLO' : `CAMP ÉQUIPE ${isBlue ? '01' : '02'}`}</p>
+            <h2 id={`team-title-${team}`}>{playerName}</h2>
           </div>
         </div>
         <div className="score-stack">
@@ -346,7 +355,7 @@ function TeamPanel({
               if (event.key === 'Enter' && !locked && !submitted) onSubmit();
             }}
             disabled={locked || submitted}
-            aria-label={`Réponse de ${TEAM_NAMES[team]}`}
+            aria-label={`Réponse de ${playerName}`}
           />
           <button
             type="button"
@@ -365,12 +374,15 @@ function TeamPanel({
         {message && <p className="team-result-message" data-testid={`text-result-${team}`}>{message}</p>}
       </div>
       <CalculatorPad
+        key={`${team}-${round}`}
         team={team}
         value={calcValue}
         setValue={setCalcValue}
         result={calcResult}
         setResult={setCalcResult}
         onCopy={onCopy}
+        copyDisabled={locked || submitted}
+        owner={playerName}
       />
     </section>
   );
@@ -379,6 +391,7 @@ function TeamPanel({
 function App() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [difficulty, setDifficulty] = useState<Difficulty>('Moyen');
+  const [mode, setMode] = useState<PlayMode>('duel');
   const [round, setRound] = useState(1);
   const [questionCountInput, setQuestionCountInput] = useState('99');
   const [secondsPerQuestionInput, setSecondsPerQuestionInput] = useState('30');
@@ -426,12 +439,14 @@ function App() {
     const eventLines: string[] = [];
     const nextMessages: Record<TeamKey, string> = { blue: '', red: '' };
 
-    (['blue', 'red'] as TeamKey[]).forEach((team) => {
+    const teams: TeamKey[] = mode === 'solo' ? ['blue'] : ['blue', 'red'];
+    teams.forEach((team) => {
       const other: TeamKey = team === 'blue' ? 'red' : 'blue';
+      const label = mode === 'solo' ? 'Joueur' : TEAM_NAMES[team];
       const response = submittedAnswers[team];
       if (response === null || response.trim() === '') {
         nextMessages[team] = 'Pas de réponse — aucun point perdu.';
-        eventLines.push(`${TEAM_NAMES[team]} : sans réponse, aucun changement.`);
+        eventLines.push(`${label} : sans réponse, aucun changement.`);
         return;
       }
       const numeric = Number(response);
@@ -439,7 +454,15 @@ function App() {
       if (correct[team]) {
         deltas[team] += 1;
         nextMessages[team] = 'Bonne réponse : +1 point.';
-        eventLines.push(`${TEAM_NAMES[team]} : bonne réponse, +1 point.`);
+        eventLines.push(`${label} : bonne réponse, +1 point.`);
+      } else if (mode === 'solo') {
+        deltas[team] -= 1;
+        nextMessages[team] = scores[team] === 0
+          ? 'Réponse incorrecte : score déjà à zéro.'
+          : 'Réponse incorrecte : −1 point.';
+        eventLines.push(scores[team] === 0
+          ? `${label} : réponse incorrecte, score déjà à zéro.`
+          : `${label} : réponse incorrecte, −1 point.`);
       } else {
         deltas[team] -= 1;
         deltas[other] += 1;
@@ -488,11 +511,17 @@ function App() {
     if (phase === 'playing' && seconds === 0) resolveRound(submissions);
   }, [phase, seconds, submissions]);
 
-  const submitAnswer = (team: TeamKey) => {
-    if (phase !== 'playing' || submissions[team] !== null || !answers[team].trim()) return;
-    const nextSubmissions = { ...submissions, [team]: answers[team].trim() };
+  const submitAnswer = (team: TeamKey, explicitAnswer?: string) => {
+    if (phase !== 'playing' || submissions[team] !== null) return;
+    const answer = (explicitAnswer ?? answers[team]).trim();
+    if (!answer) return;
+    if (explicitAnswer !== undefined) setAnswers((current) => ({ ...current, [team]: answer }));
+    const nextSubmissions = { ...submissions, [team]: answer };
     setSubmissions(nextSubmissions);
-    if (nextSubmissions.blue !== null && nextSubmissions.red !== null) resolveRound(nextSubmissions);
+    const roundComplete = mode === 'solo'
+      ? nextSubmissions.blue !== null
+      : nextSubmissions.blue !== null && nextSubmissions.red !== null;
+    if (roundComplete) resolveRound(nextSubmissions);
   };
 
   const advance = () => {
@@ -505,6 +534,8 @@ function App() {
     setRound((current) => current + 1);
     setAnswers({ blue: '', red: '' });
     setSubmissions({ blue: null, red: null });
+    setCalculatorValues({ blue: '', red: '' });
+    setCalculatorResults({ blue: '', red: '' });
     setResultMessages({ blue: '', red: '' });
     setRoundEvents([]);
     setQuestion(generateQuestion(difficulty));
@@ -526,10 +557,14 @@ function App() {
   };
 
   const copyCalculatorResult = (team: TeamKey) => {
-    if (calculatorResults[team]) setAnswers((current) => ({ ...current, [team]: calculatorResults[team] }));
+    const result = calculatorResults[team]?.trim();
+    if (result) submitAnswer(team, result);
   };
 
-  const winner = finalSnapshot.blue === finalSnapshot.red ? 'Égalité parfaite' : finalSnapshot.blue > finalSnapshot.red ? 'Équipe Bleue remporte le duel' : 'Équipe Rouge remporte le duel';
+  const winner = mode === 'solo'
+    ? 'Partie terminée'
+    : finalSnapshot.blue === finalSnapshot.red ? 'Égalité parfaite' : finalSnapshot.blue > finalSnapshot.red ? 'Équipe Bleue remporte le duel' : 'Équipe Rouge remporte le duel';
+  const solo = mode === 'solo';
   const timerPercent = Math.max(0, (seconds / secondsPerQuestion) * 100);
   const timerUrgent = seconds <= Math.min(10, Math.ceil(secondsPerQuestion / 3));
   const completedQuestions = phase === 'reveal' ? round : Math.max(0, round - 1);
@@ -560,8 +595,10 @@ function App() {
             <div className="setup-intro">
               <div className="setup-copy">
                 <div className="eyebrow-chip"><Sparkles size={14} /> PRÊTS À FAIRE CHAUFFER LES MÉNINGES ?</div>
-                <h1 id="setup-title" className="hero-title">Deux équipes.<br /><span>Un seul calcul.</span></h1>
-                <p className="hero-description">Même expression, même chrono. La classe tranche au tableau : chaque bonne réponse marque, chaque erreur fait basculer le point.</p>
+                <h1 id="setup-title" className="hero-title">{solo ? 'Un joueur.' : 'Deux équipes.'}<br /><span>Un seul calcul.</span></h1>
+                <p className="hero-description">{solo
+                  ? 'Seul face au chrono. Une bonne réponse marque un point, une erreur en retire un. Le score ne descend pas sous zéro.'
+                  : 'Même expression, même chrono. La classe tranche au tableau : chaque bonne réponse marque, chaque erreur fait basculer le point.'}</p>
               </div>
               <div className="duel-art" aria-hidden="true">
                 <div className="art-score art-score-blue">BLEU<br /><b>01</b></div>
@@ -575,6 +612,30 @@ function App() {
                 <div className="art-score art-score-red">ROUGE<br /><b>02</b></div>
                 <div className="art-sticker">À VOUS<br />DE JOUER</div>
               </div>
+            </div>
+            <div className="mode-row" role="group" aria-label="Choisir le nombre de joueurs">
+              <button
+                type="button"
+                className={`mode-card ${mode === 'duel' ? 'selected' : ''}`}
+                aria-pressed={mode === 'duel'}
+                onClick={() => setMode('duel')}
+                data-testid="button-mode-duel"
+              >
+                <span className="mode-kicker">01</span>
+                <span className="mode-title">Deux équipes</span>
+                <span className="mode-detail">Bleu contre rouge. L’erreur donne le point à l’autre.</span>
+              </button>
+              <button
+                type="button"
+                className={`mode-card ${mode === 'solo' ? 'selected' : ''}`}
+                aria-pressed={mode === 'solo'}
+                onClick={() => setMode('solo')}
+                data-testid="button-mode-solo"
+              >
+                <span className="mode-kicker">02</span>
+                <span className="mode-title">Un joueur</span>
+                <span className="mode-detail">Seul au tableau. Bonne réponse +1, erreur −1.</span>
+              </button>
             </div>
             <div className="setup-divider"><span>CHOISISSEZ VOTRE NIVEAU</span></div>
             <div className="difficulty-grid" role="group" aria-label="Choisir la difficulté">
@@ -631,22 +692,29 @@ function App() {
                 </label>
               </div>
               <button type="button" className="start-button" onClick={beginGame} data-testid="button-start-game">
-                LANCER LE DUEL <ArrowRight size={18} />
+                {solo ? 'LANCER LA PARTIE' : 'LANCER LE DUEL'} <ArrowRight size={18} />
               </button>
             </div>
-            <div className="setup-footnote">LES DEUX ÉQUIPES RÉPONDENT EN MÊME TEMPS. PAS DE HASARD, QUE DU CALCUL.</div>
+            <div className="setup-footnote">
+              {solo ? 'UNE SEULE RÉPONSE, PUIS LE VERDICT. PAS DE HASARD, QUE DU CALCUL.' : 'LES DEUX ÉQUIPES RÉPONDENT EN MÊME TEMPS. PAS DE HASARD, QUE DU CALCUL.'}
+              <span className="author-credit">Ahmed BENDRIF · Étudiant en première secondaire</span>
+            </div>
           </section>
         ) : phase === 'finished' ? (
           <section className="final-screen resolution-enter" data-testid="screen-final" aria-labelledby="final-title">
             <div className="final-confetti" aria-hidden="true"><span /><span /><span /><span /><span /><span /></div>
             <div className="final-trophy"><Trophy size={32} /></div>
-            <p className="final-eyebrow">FIN DU DUEL · {questionCount} {questionCount === 1 ? 'QUESTION JOUÉE' : 'QUESTIONS JOUÉES'}</p>
+            <p className="final-eyebrow">{solo ? 'FIN DE LA PARTIE' : 'FIN DU DUEL'} · {questionCount} {questionCount === 1 ? 'QUESTION JOUÉE' : 'QUESTIONS JOUÉES'}</p>
             <h1 id="final-title">{winner}</h1>
-            <p className="final-subtitle">Quel que soit le score, la classe a bien calculé.</p>
+            <p className="final-subtitle">{solo ? 'Chaque calcul compte. Voici le score.' : 'Quel que soit le score, la classe a bien calculé.'}</p>
             <div className="final-scores">
-              <div className="final-score-box blue-final"><span>ÉQUIPE BLEUE</span><b className="mono">{finalSnapshot.blue}</b><small>POINTS</small></div>
-              <div className="final-vs">VS</div>
-              <div className="final-score-box red-final"><span>ÉQUIPE ROUGE</span><b className="mono">{finalSnapshot.red}</b><small>POINTS</small></div>
+              <div className="final-score-box blue-final"><span>{solo ? 'JOUEUR' : 'ÉQUIPE BLEUE'}</span><b className="mono">{finalSnapshot.blue}</b><small>POINTS</small></div>
+              {!solo && (
+                <>
+                  <div className="final-vs">VS</div>
+                  <div className="final-score-box red-final"><span>ÉQUIPE ROUGE</span><b className="mono">{finalSnapshot.red}</b><small>POINTS</small></div>
+                </>
+              )}
             </div>
             <button type="button" className="start-button final-restart" onClick={restart} data-testid="button-play-again">
               <RotateCcw size={16} /> REJOUER UNE PARTIE
@@ -654,7 +722,7 @@ function App() {
           </section>
         ) : (
           <>
-            <div className="round-bar" aria-label={`Question ${round} sur ${questionCount}`}>
+            <div className={`round-bar ${solo ? 'is-solo' : ''}`} aria-label={`Question ${round} sur ${questionCount}`}>
               <div className="round-label"><span className="round-kicker">QUESTION</span><strong className="mono" data-testid="text-round">{String(round).padStart(2, '0')}<i> / {questionCount}</i></strong></div>
               <div className="round-progress" role="progressbar" aria-label="Progression du duel" aria-valuemin={0} aria-valuemax={questionCount} aria-valuenow={completedQuestions}>
                 <div className="round-progress-fill" style={{ width: `${(completedQuestions / questionCount) * 100}%` }} />
@@ -663,7 +731,7 @@ function App() {
               <span className="difficulty-pill">{difficulty.toUpperCase()}</span>
             </div>
 
-            <div className={`play-layout ${phase === 'reveal' ? 'is-revealing' : ''}`}>
+            <div className={`play-layout ${phase === 'reveal' ? 'is-revealing' : ''} ${solo ? 'is-solo' : ''}`}>
               <TeamPanel
                 team="blue"
                 score={scores.blue}
@@ -679,6 +747,8 @@ function App() {
                 onSubmit={() => submitAnswer('blue')}
                 onCopy={() => copyCalculatorResult('blue')}
                 message={resultMessages.blue}
+                solo={solo}
+                round={round}
               />
 
               <section className="challenge-column" aria-label="Question commune">
@@ -688,7 +758,7 @@ function App() {
                   </div>
                   <div className="timer-copy">
                     <b>{phase === 'reveal' ? 'MANCHE RÉSOLUE' : timerUrgent ? 'DERNIÈRES SECONDES !' : 'LE CHRONO TOURNE'}</b>
-                    <span>{phase === 'reveal' ? 'La réponse est révélée' : 'Une seule réponse par équipe'}</span>
+                    <span>{phase === 'reveal' ? 'La réponse est révélée' : solo ? 'Une seule réponse' : 'Une seule réponse par équipe'}</span>
                   </div>
                   <div className="timer-track"><span className={timerUrgent ? 'urgent' : ''} style={{ width: `${phase === 'reveal' ? 0 : timerPercent}%` }} /></div>
                 </div>
@@ -721,15 +791,15 @@ function App() {
                     </div>
                   ) : (
                     <div className="challenge-footer">
-                      <span><Swords size={14} /> MÊME QUESTION, MÊME CHANCE</span>
+                      <span><Swords size={14} /> {solo ? 'PRENDS TON TEMPS, PUIS VALIDE' : 'MÊME QUESTION, MÊME CHANCE'}</span>
                       <span className="seal">DM<span>·</span>01</span>
                     </div>
                   )}
                 </div>
-                <div className="fair-play-note"><span className="fair-play-icon"><Check size={14} /></span><span><b>RÈGLE DU DUEL</b> Une erreur ? Le point va à l’autre équipe. Aucun score sous zéro.</span></div>
+                <div className="fair-play-note"><span className="fair-play-icon"><Check size={14} /></span><span>{solo ? <><b>RÈGLE SOLO</b> Une erreur retire un point. Aucun score sous zéro.</> : <><b>RÈGLE DU DUEL</b> Une erreur ? Le point va à l’autre équipe. Aucun score sous zéro.</>}</span></div>
               </section>
 
-              <TeamPanel
+              {!solo && <TeamPanel
                 team="red"
                 score={scores.red}
                 answer={answers.red}
@@ -744,10 +814,13 @@ function App() {
                 onSubmit={() => submitAnswer('red')}
                 onCopy={() => copyCalculatorResult('red')}
                 message={resultMessages.red}
-              />
+                solo={false}
+                round={round}
+              />}
             </div>
             <footer className="game-footer">
-              <span>DUEL MATHÉMATIQUE <i>·</i> LE CALCUL, C’EST COLLECTIF.</span>
+              <span>DUEL MATHÉMATIQUE <i>·</i> {solo ? 'LE CALCUL, À TON RYTHME.' : 'LE CALCUL, C’EST COLLECTIF.'}</span>
+              <span className="author-credit">Ahmed BENDRIF · Étudiant en première secondaire</span>
               <button type="button" onClick={restart} data-testid="button-reset-round"><ArrowLeft size={13} /> RETOUR AU CHOIX DU NIVEAU</button>
             </footer>
           </>
